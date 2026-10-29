@@ -18,7 +18,7 @@ const buttonSelector = ".vc-wakeupfriend-button";
 const settings = definePluginSettings({
     returnDelay: {
         type: OptionType.NUMBER,
-        description: "Geri getirmeden önce beklenecek süre (ms, 500–2500).",
+        description: "Delay before returning the member (ms, 500–2500).",
         default: 1000,
         isValid: value => typeof value === "number" && Number.isFinite(value) && value >= 500 && value <= 2500
     }
@@ -82,7 +82,7 @@ const engine = new WakeEngine({
     },
     async move(plan, channelId) {
         const channel = info(channelId);
-        if (!channel || channel.guildId !== plan.guildId || !allowed(channel)) throw new Error("Taşıma yetkisi veya kanal erişimi değişti.");
+        if (!channel || channel.guildId !== plan.guildId || !allowed(channel)) throw new Error("Move permission or channel access changed.");
         await RestAPI.patch({
             url: `/guilds/${plan.guildId}/members/${plan.userId}`,
             body: { channel_id: channelId }
@@ -110,19 +110,19 @@ function userForRow(row: HTMLElement): string | undefined {
 
 function report(result: WakeResult) {
     if (result.kind === "success") {
-        showToast({ text: `WakeUpFriend: ${result.plan.source.name} kanalına geri getirildi.`, variant: "success" });
+        showToast({ text: `WakeUpFriend: Returned to ${result.plan.source.name}.`, variant: "success" });
     } else if (result.kind === "return-failed") {
         logger.error("Return failed", result.error);
-        showToast({ text: `WakeUpFriend: Geri dönüş başarısız. Yeniden denemek için kırmızı oka bas (${result.plan.source.name}).`, variant: "critical", duration: 10000 });
+        showToast({ text: `WakeUpFriend: Could not return the member. Click the red arrow to retry (${result.plan.source.name}).`, variant: "critical", duration: 10000 });
     } else if (result.kind === "outbound-failed") {
         logger.error("Move failed", result.error);
-        showToast({ text: "WakeUpFriend: Taşınamadı. Yetkiyi ve kanal erişimini kontrol et.", variant: "critical" });
+        showToast({ text: "WakeUpFriend: Could not move the member. Check your permissions and channel access.", variant: "critical" });
     } else {
         const messages = {
-            busy: "Başka bir taşıma işlemi sürüyor.",
-            cooldown: "Tekrar denemeden önce 3 saniye bekle.",
-            unavailable: "Uygun alt oda veya taşıma yetkisi bulunamadı.",
-            interrupted: "Kişinin ses kanalı değişti; geri çekme iptal edildi."
+            busy: "Another move is already in progress.",
+            cooldown: "Wait 3 seconds before trying again.",
+            unavailable: "No suitable room below or missing move permissions.",
+            interrupted: "The member changed voice channels; the return move was cancelled."
         };
         showToast({ text: `WakeUpFriend: ${messages[result.kind]}` });
     }
@@ -160,7 +160,7 @@ function makeButton(): HTMLButtonElement {
         }
         void engine.run(userId).then(report).catch(error => {
             logger.error("Unexpected error", error);
-            showToast({ text: "WakeUpFriend: İşlem tamamlanamadı; kişinin ses kanalını kontrol et.", variant: "critical" });
+            showToast({ text: "WakeUpFriend: The action could not be completed. Check the member's voice channel.", variant: "critical" });
         }).finally(scheduleRefresh);
     });
     return button;
@@ -205,8 +205,8 @@ function refresh() {
         button.dataset.busy = String(engine.activeUser === userId);
         button.disabled = !!engine.activeUser;
         const label = recovery
-            ? `WakeUpFriend: ${plan.source.name} kanalına geri getir`
-            : `WakeUpFriend: ${plan.destination.name} kanalına taşı ve geri getir`;
+            ? `WakeUpFriend: Return to ${plan.source.name}`
+            : `WakeUpFriend: Move to ${plan.destination.name} and bring back`;
         button.title = label;
         button.setAttribute("aria-label", label);
     }
@@ -214,7 +214,7 @@ function refresh() {
 
 export default definePlugin({
     name: "WakeUpFriend",
-    description: "Ses kanalında üzerine geldiğin kişiyi uygun alt odaya taşıyıp geri getirir (Üyeleri Taşı yetkisi gerekir).",
+    description: "Move a hovered voice member to the next available room below, then bring them back (requires Move Members).",
     authors: [{ name: "cemuu", id: 0n }],
     enabledByDefault: true,
     settings,
