@@ -1,0 +1,51 @@
+.vc-wakeupfriend-row {
+    position: relative;
+}
+
+.vc-wakeupfriend-button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: var(--interactive-icon-default, #bdc8d1);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 26px;
+    height: 24px;
+    justify-content: center;
+    margin-inline: 0 4px;
+    opacity: 0;
+    padding: 3px;
+    pointer-events: none;
+    position: relative;
+    vertical-align: middle;
+    width: 26px;
+    z-index: 2;
+}
+
+.vc-wakeupfriend-row:hover .vc-wakeupfriend-button,
+.vc-wakeupfriend-row:focus-within .vc-wakeupfriend-button,
+.vc-wakeupfriend-button[data-recovery="true"],
+.vc-wakeupfriend-button[data-busy="true"] {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.vc-wakeupfriend-button:hover {
+    background: var(--hsl-main-color, var(--background-mod-strong));
+    color: #fff;
+}
+
+.vc-wakeupfriend-button:focus-visible {
+    outline: 2px solid var(--focus-color, #bdc8d1);
+    outline-offset: 2px;
+}
+
+.vc-wakeupfriend-button:disabled {
+    cursor: wait;
+    opacity: 0.45;
+}
+
+.vc-wakeupfriend-button[data-recovery="true"] {
+    color: var(--text-feedback-critical, #d8979e);
+}
